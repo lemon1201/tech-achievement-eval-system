@@ -1,0 +1,84 @@
+[
+  {
+    "case_id": "case-energy-001",
+    "title": "电力调度系统测试大纲（已审）",
+    "industry": "energy",
+    "task_type": "evaluation_outline",
+    "approved": true,
+    "version": "v1.2",
+    "quality_score": 0.92,
+    "modules": [
+      {
+        "module_id": "mod-scope-001",
+        "module_type": "scope",
+        "content": {"scope": "覆盖调度核心链路、异常处置与告警策略"},
+        "applicability": {"industry": ["energy"], "object_type": ["system"]}
+      },
+      {
+        "module_id": "mod-metrics-001",
+        "module_type": "metrics",
+        "content": {"items": [{"name": "准确率", "threshold": ">=95%"}, {"name": "告警延迟", "threshold": "<=2s"}]},
+        "applicability": {"industry": ["energy"], "constraints": {"compliance_level": ["high", "medium"]}}
+      },
+      {
+        "module_id": "mod-method-001",
+        "module_type": "methods",
+        "content": {"method": "离线回放 + 在线压测 + 故障注入"},
+        "applicability": {"industry": ["energy"]}
+      },
+      {
+        "module_id": "mod-cond-001",
+        "module_type": "conditions",
+        "content": {"env": "预生产双节点，保留日志与版本号"},
+        "applicability": {"industry": ["energy"]}
+      },
+      {
+        "module_id": "mod-acc-001",
+        "module_type": "acceptance_rules",
+        "content": {"rule": "核心指标连续3轮达标且无P1故障"},
+        "applicability": {"industry": ["energy"]}
+      },
+      {
+        "module_id": "mod-evi-001",
+        "module_type": "evidence_rules",
+        "content": {"evidence": "保留测试日志、脚本版本、报告页码映射"},
+        "applicability": {"industry": ["energy", "manufacturing"]}
+      }
+    ]
+  },
+  {
+    "case_id": "case-manufacturing-001",
+    "title": "制造质检系统测试大纲（已审）",
+    "industry": "manufacturing",
+    "task_type": "evaluation_outline",
+    "approved": true,
+    "version": "v2.0",
+    "quality_score": 0.88,
+    "modules": [
+      {
+        "module_id": "mod-scope-101",
+        "module_type": "scope",
+        "content": {"scope": "覆盖质检检测、误检漏检与追溯链路"},
+        "applicability": {"industry": ["manufacturing"], "object_type": ["software", "system"]}
+      },
+      {
+        "module_id": "mod-metrics-101",
+        "module_type": "metrics",
+        "content": {"items": [{"name": "漏检率", "threshold": "<=1%"}, {"name": "误检率", "threshold": "<=2%"}]},
+        "applicability": {"industry": ["manufacturing"]}
+      },
+      {
+        "module_id": "mod-method-101",
+        "module_type": "methods",
+        "content": {"method": "历史样本回放 + 难例集验证"},
+        "applicability": {"industry": ["manufacturing"]}
+      },
+      {
+        "module_id": "mod-acc-101",
+        "module_type": "acceptance_rules",
+        "content": {"rule": "关键指标达到阈值并通过人工抽检"},
+        "applicability": {"industry": ["manufacturing", "energy"]}
+      }
+    ]
+  }
+]
