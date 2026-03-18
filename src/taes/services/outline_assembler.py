@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List
+from typing import Dict, List
 
 from taes.models.schemas import GeneratedOutline, ModuleCandidate, OutlineSection, ValidateIssue
 
@@ -23,6 +23,19 @@ def _find_module(modules: List[ModuleCandidate], module_type: str) -> ModuleCand
     return None
 
 
+def _collect_metric_thresholds(selected_modules: List[ModuleCandidate]) -> Dict[str, set]:
+    metric_map: Dict[str, set] = {}
+    for m in selected_modules:
+        items = m.content.get("items", []) if isinstance(m.content, dict) else []
+        for it in items:
+            name = str(it.get("name", "")).strip()
+            threshold = str(it.get("threshold", "")).strip()
+            if not name or not threshold:
+                continue
+            metric_map.setdefault(name, set()).add(threshold)
+    return metric_map
+
+
 def assemble_outline(task_id: str, title: str, selected_modules: List[ModuleCandidate]) -> GeneratedOutline:
     sections = []
 
@@ -35,8 +48,23 @@ def assemble_outline(task_id: str, title: str, selected_modules: List[ModuleCand
 
     outline_id = f"outline-{datetime.now().strftime('%Y%m%d%H%M%S')}"
     gap_report: List[ValidateIssue] = []
+    issues: List[str] = []
+
     if any("[缺失模块]" in s.content for s in sections):
+        issues.append("module_completeness")
         gap_report.append(ValidateIssue(field="module_completeness", severity="high", suggestion="补齐缺失模块后再生成正式大纲"))
+
+    metric_map = _collect_metric_thresholds(selected_modules)
+    for metric, th_set in metric_map.items():
+        if len(th_set) > 1:
+            issues.append(f"threshold_conflict:{metric}")
+            gap_report.append(
+                ValidateIssue(
+                    field=f"threshold_conflict:{metric}",
+                    severity="high",
+                    suggestion=f"同一指标出现多个阈值 {sorted(list(th_set))}，请统一阈值定义",
+                )
+            )
 
     return GeneratedOutline(
         task_id=task_id,
@@ -44,6 +72,6 @@ def assemble_outline(task_id: str, title: str, selected_modules: List[ModuleCand
         title=title,
         sections=sections,
         selected_modules=[m.module_id for m in selected_modules],
-        consistency_check={"passed": len(gap_report) == 0, "issues": [g.field for g in gap_report]},
+        consistency_check={"passed": len(issues) == 0, "issues": issues},
         gap_report=gap_report,
     )

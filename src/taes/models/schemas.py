@@ -47,7 +47,8 @@ class RetrieveCasesResponse(BaseModel):
 
 class ExtractModulesRequest(BaseModel):
     case_ids: List[str]
-    module_types: List[str] = Field(default_factory=lambda: ["scope", "metrics", "methods", "thresholds", "conditions", "acceptance_rules"])
+    module_types: List[str] = Field(default_factory=lambda: ["scope", "metrics", "methods", "thresholds", "conditions", "acceptance_rules", "evidence_rules"])
+    task_profile: Dict[str, Any] = Field(default_factory=dict)
 
 
 class ModuleCandidate(BaseModel):
@@ -109,6 +110,18 @@ class GeneratedOutline(BaseModel):
 class EvaluateRequest(BaseModel):
     title: str
     text: str
+
+
+class ExportOutlineRequest(BaseModel):
+    outline: GeneratedOutline
+    base_name: str = "generated_outline"
+    export_dir: str = "data/processed/exports"
+
+
+class ExportOutlineResponse(BaseModel):
+    word_path: str
+    pdf_path: str
+    note: str
 
 
 class EvaluateResponse(BaseModel):

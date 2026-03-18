@@ -8,6 +8,8 @@ from taes.models.schemas import (
     ClassifiedTask,
     EvaluateRequest,
     EvaluateResponse,
+    ExportOutlineRequest,
+    ExportOutlineResponse,
     ExtractModulesRequest,
     ExtractModulesResponse,
     GenerateOutlineRequest,
@@ -27,6 +29,7 @@ from taes.services.ahp_selector import select_modules
 from taes.services.outline_assembler import assemble_outline
 from taes.services.validator import validate_outline
 from taes.services.quick_evaluator import quick_extract_items, build_edges, quick_score
+from taes.services.exporter import export_outline_files
 
 app = FastAPI(title="tech-achievement-eval-system", version="1.0.0")
 
@@ -49,7 +52,7 @@ def retrieve_cases_api(req: RetrieveCasesRequest):
 
 @app.post("/extract-modules", response_model=ExtractModulesResponse)
 def extract_modules_api(req: ExtractModulesRequest):
-    candidates = extract_module_candidates(req.case_ids, req.module_types)
+    candidates = extract_module_candidates(req.case_ids, req.module_types, req.task_profile)
     return ExtractModulesResponse(candidates=candidates)
 
 
@@ -79,9 +82,16 @@ def run_pipeline(req: TaskInput):
     hits = retrieve_cases(classified.industry, classified.task_type, top_n=5)
     case_ids = [h.case_id for h in hits]
 
+    task_profile = {
+        "industry": classified.industry,
+        "object_type": classified.object_type,
+        **req.constraints.model_dump(),
+    }
+
     candidates = extract_module_candidates(
         case_ids,
         ["scope", "metrics", "methods", "thresholds", "conditions", "acceptance_rules", "evidence_rules"],
+        task_profile,
     )
 
     weights = {
@@ -110,6 +120,12 @@ def run_pipeline(req: TaskInput):
         "outline": outline,
         "validation": validation,
     }
+
+
+@app.post("/export-outline", response_model=ExportOutlineResponse)
+def export_outline(req: ExportOutlineRequest):
+    word_path, pdf_path, note = export_outline_files(req.outline, req.base_name, req.export_dir)
+    return ExportOutlineResponse(word_path=word_path, pdf_path=pdf_path, note=note)
 
 
 @app.post("/evaluate", response_model=EvaluateResponse)
