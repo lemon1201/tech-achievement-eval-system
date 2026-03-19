@@ -12,7 +12,7 @@
 - 大纲生成（含阈值冲突标记）：`/generate-outline`
 - 一致性校验（含冲突阈值检测）：`/validate-outline`
 - 大纲导出 Word/PDF：`/export-outline`
-- 端到端流水线：`/pipeline/run`
+- 端到端流水线（含主行业+相关行业召回）：`/pipeline/run`
 - 快速评价（兼容旧接口）：`/evaluate`
 
 ## 快速开始

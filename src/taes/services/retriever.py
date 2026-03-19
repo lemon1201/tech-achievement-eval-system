@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Sequence
 
 from taes.models.schemas import CaseHit
 from taes.storage.case_store import case_store
@@ -28,3 +28,29 @@ def retrieve_cases(industry: str, task_type: str, top_n: int) -> List[CaseHit]:
 
     scored.sort(key=lambda x: x.score, reverse=True)
     return scored[:top_n]
+
+
+def retrieve_cases_multi(industry_candidates: Sequence[str], task_type: str, top_n: int) -> List[CaseHit]:
+    """
+    多行业召回：
+    - 主行业优先（候选列表前面的行业权重更高）
+    - 兼顾相关行业，降低分类误差带来的漏召回
+    """
+    cases = case_store.list_cases()
+    ranked: Dict[str, CaseHit] = {}
+
+    for rank, industry in enumerate(industry_candidates):
+        rank_bonus = max(0.0, 0.08 - rank * 0.02)  # 主行业有更高加成
+        for c in cases:
+            s = _case_score(c, industry, task_type) + rank_bonus
+            if s <= 0:
+                continue
+
+            case_id = c["case_id"]
+            prev = ranked.get(case_id)
+            hit = CaseHit(case_id=case_id, score=round(s, 4), title=c.get("title", case_id))
+            if prev is None or hit.score > prev.score:
+                ranked[case_id] = hit
+
+    result = sorted(ranked.values(), key=lambda x: x.score, reverse=True)
+    return result[:top_n]

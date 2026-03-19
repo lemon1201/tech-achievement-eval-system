@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import List
-
 from fastapi import FastAPI, HTTPException
 
 from taes.models.schemas import (
@@ -14,7 +12,6 @@ from taes.models.schemas import (
     ExtractModulesResponse,
     GenerateOutlineRequest,
     GeneratedOutline,
-    ModuleCandidate,
     RetrieveCasesRequest,
     RetrieveCasesResponse,
     SelectModulesRequest,
@@ -30,6 +27,7 @@ from taes.services.outline_assembler import assemble_outline
 from taes.services.validator import validate_outline
 from taes.services.quick_evaluator import quick_extract_items, build_edges, quick_score
 from taes.services.exporter import export_outline_files
+from taes.services.pipeline import run_evaluation_pipeline
 
 app = FastAPI(title="tech-achievement-eval-system", version="1.0.0")
 
@@ -78,48 +76,7 @@ def validate_outline_api(req: GeneratedOutline):
 
 @app.post("/pipeline/run")
 def run_pipeline(req: TaskInput):
-    classified = classify_task(req)
-    hits = retrieve_cases(classified.industry, classified.task_type, top_n=5)
-    case_ids = [h.case_id for h in hits]
-
-    task_profile = {
-        "industry": classified.industry,
-        "object_type": classified.object_type,
-        **req.constraints.model_dump(),
-    }
-
-    candidates = extract_module_candidates(
-        case_ids,
-        ["scope", "metrics", "methods", "thresholds", "conditions", "acceptance_rules", "evidence_rules"],
-        task_profile,
-    )
-
-    weights = {
-        "accuracy_fit": 0.35,
-        "compliance_risk": 0.25,
-        "execution_cost": 0.15,
-        "interpretability": 0.15,
-        "maintainability": 0.10,
-    }
-    selected_result = select_modules(req.constraints.model_dump(), candidates, weights)
-
-    selected_candidates: List[ModuleCandidate] = []
-    selected_ids = {v["module_id"] for v in selected_result["selected"].values()}
-    for _, mods in candidates.items():
-        for m in mods:
-            if m.module_id in selected_ids:
-                selected_candidates.append(m)
-
-    outline = assemble_outline(req.task_id, req.title, selected_candidates)
-    validation = validate_outline(outline)
-
-    return {
-        "classified": classified,
-        "retrieved_case_ids": case_ids,
-        "selected": selected_result,
-        "outline": outline,
-        "validation": validation,
-    }
+    return run_evaluation_pipeline(req)
 
 
 @app.post("/export-outline", response_model=ExportOutlineResponse)

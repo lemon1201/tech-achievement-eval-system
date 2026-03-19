@@ -1,6 +1,14 @@
 from __future__ import annotations
 
+from typing import List
+
 from taes.models.schemas import ClassifiedTask, TaskInput
+
+RELATED_INDUSTRIES = {
+    "energy": ["manufacturing"],
+    "manufacturing": ["energy"],
+    "medical": ["manufacturing"],
+}
 
 
 def classify_task(task: TaskInput) -> ClassifiedTask:
@@ -30,3 +38,12 @@ def classify_task(task: TaskInput) -> ClassifiedTask:
         object_type=object_type,
         confidence=confidence,
     )
+
+
+def recommend_industries(industry: str) -> List[str]:
+    """返回主行业 + 相关行业（用于相近案例召回）。"""
+    if not industry or industry == "unknown":
+        return ["energy", "manufacturing", "medical"]
+
+    related = RELATED_INDUSTRIES.get(industry, [])
+    return [industry, *[x for x in related if x != industry]]
