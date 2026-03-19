@@ -72,4 +72,3 @@ python -m uvicorn taes.api.app:app --reload --app-dir src --port 8010
 
 ## 相关文档
 - 技术设计：`docs/TECH_DESIGN.md`
-- 简历项目描述模板：`docs/RESUME_PROJECT2.md`
